@@ -15,22 +15,36 @@ virtual registers, predicates, and guarded branches.
 
 ![Demo: compiling a SAXPY kernel to PTX-like code and running it](docs/demo.gif)
 
+**Input** (`examples/vec_add.tiny`):
+
+```c
+func vec_add(float a[], float b[], float c[], int n) {
+    int i = 0;
+    while (i < n) {
+        c[i] = a[i] + b[i];
+        i = i + 1;
+    }
+}
 ```
-func vec_add(float a[], float b[], float c[], int n) {      .func vec_add(.f32 a[], .f32 b[], .f32 c[], .s32 %r1)
-    int i = 0;                                               {
-    while (i < n) {                                              mov.s32     %r2, 0;
-        c[i] = a[i] + b[i];                                  L_while1:
-        i = i + 1;                                               setp.lt.s32 %p1, %r2, %r1;
-    }                                                            @!%p1 bra   L_endwhile1;
-}                                                                ld.f32      %f1, [a + %r2];
-                                                                 ld.f32      %f2, [b + %r2];
-                                                                 add.f32     %f1, %f1, %f2;
-                                                                 st.f32      [c + %r2], %f1;
-                                                                 add.s32     %r2, %r2, 1;
-                                                                 bra         L_while1;
-                                                             L_endwhile1:
-                                                                 ret;
-                                                             }
+
+**Output** (`miniptx examples/vec_add.tiny`, with comments added):
+
+```
+.func vec_add(.f32 a[], .f32 b[], .f32 c[], .s32 %r1)
+{
+    mov.s32     %r2, 0;
+L_while1:
+    setp.lt.s32 %p1, %r2, %r1;      // %p1 = (i < n)
+    @!%p1 bra   L_endwhile1;        // leave the loop when false
+    ld.f32      %f1, [a + %r2];
+    ld.f32      %f2, [b + %r2];
+    add.f32     %f1, %f1, %f2;      // result reuses %f1 (register allocation)
+    st.f32      [c + %r2], %f1;
+    add.s32     %r2, %r2, 1;
+    bra         L_while1;
+L_endwhile1:
+    ret;
+}
 ```
 
 ## Pipeline
