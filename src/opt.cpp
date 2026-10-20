@@ -206,26 +206,16 @@ bool removeUnreachable(IrFunction& f) {
   std::vector<Instr>& body = f.body;
 
   // 1. Reachability: start at the first instruction and follow every edge.
-  std::map<std::string, size_t> labelAt;
-  for (size_t i = 0; i < body.size(); i++)
-    if (body[i].op == Op::Label) labelAt[body[i].label] = i;
-
+  std::vector<std::vector<size_t>> succ = successors(f);
   std::vector<bool> reached(body.size(), false);
   std::vector<size_t> work;
   if (!body.empty()) work.push_back(0);
   while (!work.empty()) {
     size_t i = work.back();
     work.pop_back();
-    if (i >= body.size() || reached[i]) continue;
+    if (reached[i]) continue;
     reached[i] = true;
-    const Instr& in = body[i];
-    if (in.op == Op::Ret) continue;                        // no successor
-    if (in.op == Op::Bra) {
-      auto t = labelAt.find(in.label);
-      if (t != labelAt.end()) work.push_back(t->second);  // the jump
-      if (!in.guard.isReg()) continue;                     // unconditional: no fall-through
-    }
-    work.push_back(i + 1);                                 // fall through
+    for (size_t s : succ[i]) work.push_back(s);
   }
 
   std::vector<Instr> out;

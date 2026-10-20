@@ -62,7 +62,14 @@ class FunctionGen {
       case Stmt::Kind::VarDecl: {
         Operand reg = newReg(regClassOf(s.declType));
         varReg_[s.varId] = reg;
-        if (s.value) genExpr(*s.value, &reg);  // compute straight into the variable
+        if (s.value) {
+          genExpr(*s.value, &reg);  // compute straight into the variable
+        } else {
+          // "int x;" means x = 0. This must be explicit: after register
+          // allocation, x's register may still hold another variable's old value.
+          emitMov(reg, s.declType == BaseType::Float ? Operand::makeFloat(0) : Operand::makeInt(0),
+                  irTypeOf(s.declType));
+        }
         break;
       }
       case Stmt::Kind::Assign: {

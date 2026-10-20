@@ -23,7 +23,7 @@ static void usage() {
       "options:\n"
       "  --dump-tokens, --dump-ast, --dump-ir   print an intermediate stage (IR is pre-optimization)\n"
       "  --no-opt                               turn off optimizations\n"
-      "  --stats                                print instruction counts before/after optimization\n"
+      "  --stats                                print instruction and register counts before/after\n"
       "  -o <file>                              write the PTX-like output to <file>\n"
       "  --threads <N>                          with --run: launch N threads (tid = 0..N-1)\n"
       "  --run <func> [args...]                 run <func>; args look like 5, 2.5, [1,2,3]\n";
@@ -79,11 +79,13 @@ int main(int argc, char** argv) {
     } else {
       ptx = emitPtx(compileSource(buf.str(), opts));
       if (showStats) {
-        std::cerr << "instructions: " << stats.instrsBefore << " -> " << stats.instrsAfter;
-        if (stats.instrsBefore > 0)
-          std::cerr << " (" << 100 * (stats.instrsBefore - stats.instrsAfter) / stats.instrsBefore
-                    << "% fewer)";
-        std::cerr << "\n";
+        auto line = [](const char* what, int before, int after) {
+          std::cerr << what << before << " -> " << after;
+          if (before > 0) std::cerr << " (" << 100 * (before - after) / before << "% fewer)";
+          std::cerr << "\n";
+        };
+        line("instructions: ", stats.instrsBefore, stats.instrsAfter);
+        line("registers:    ", stats.regsBefore, stats.regsAfter);
       }
     }
 

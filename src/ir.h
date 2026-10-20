@@ -100,3 +100,10 @@ std::string operandToString(const Operand& o);
 std::string instrToString(const Instr& in);
 void printIrFunction(const IrFunction& f, std::ostream& out);
 void printIrModule(const IrModule& m, std::ostream& out);
+
+// Control flow: for each instruction index, the indices that can execute next.
+//   ret          -> none
+//   bra L        -> L's index
+//   @%p bra L    -> L's index AND the next instruction
+//   anything else-> the next instruction
+std::vector<std::vector<size_t>> successors(const IrFunction& f);

@@ -1,6 +1,7 @@
 #include "ir.h"
 
 #include <iomanip>
+#include <map>
 #include <sstream>
 
 static const char* typeSuffix(IrType t) { return t == IrType::S32 ? "s32" : "f32"; }
@@ -126,4 +127,23 @@ void printIrModule(const IrModule& m, std::ostream& out) {
     if (i) out << "\n";
     printIrFunction(m.functions[i], out);
   }
+}
+
+std::vector<std::vector<size_t>> successors(const IrFunction& f) {
+  std::map<std::string, size_t> labelAt;
+  for (size_t i = 0; i < f.body.size(); i++)
+    if (f.body[i].op == Op::Label) labelAt[f.body[i].label] = i;
+
+  std::vector<std::vector<size_t>> succ(f.body.size());
+  for (size_t i = 0; i < f.body.size(); i++) {
+    const Instr& in = f.body[i];
+    if (in.op == Op::Ret) continue;
+    if (in.op == Op::Bra) {
+      auto t = labelAt.find(in.label);
+      if (t != labelAt.end()) succ[i].push_back(t->second);
+      if (!in.guard.isReg()) continue;  // unconditional: never falls through
+    }
+    if (i + 1 < f.body.size()) succ[i].push_back(i + 1);
+  }
+  return succ;
 }

@@ -72,8 +72,9 @@ TEST(opt_removes_unused_values) {
 
 TEST(opt_keeps_instructions_that_can_fail) {
   // The loaded value is unused, but the load can fail (bad index), so it stays.
+  // (The result reuses %r1: the index is read for the last time by this ld.)
   CHECK_EQ(opt("func f(int a[], int i) { int x = a[i]; }"),
-           std::string("  ld.s32      %r2, [a + %r1];\n"
+           std::string("  ld.s32      %r1, [a + %r1];\n"
                        "  ret;\n"));
 }
 

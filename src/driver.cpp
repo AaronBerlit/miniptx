@@ -6,6 +6,7 @@
 #include "opt.h"
 #include "lexer.h"
 #include "parser.h"
+#include "regalloc.h"
 #include "sema.h"
 
 IrModule compileSource(const std::string& source, const CompileOptions& opts) {
@@ -26,8 +27,17 @@ IrModule compileSource(const std::string& source, const CompileOptions& opts) {
   IrModule ir = generateIr(program);
   if (opts.dumpIr) printIrModule(ir, *opts.dumpIr);
 
-  if (opts.stats) opts.stats->instrsBefore = instructionCount(ir);
-  if (opts.optimize) optimize(ir);
-  if (opts.stats) opts.stats->instrsAfter = instructionCount(ir);
+  if (opts.stats) {
+    opts.stats->instrsBefore = instructionCount(ir);
+    opts.stats->regsBefore = registerCount(ir);
+  }
+  if (opts.optimize) {
+    optimize(ir);
+    allocateRegisters(ir);  // last: it needs the final instruction list
+  }
+  if (opts.stats) {
+    opts.stats->instrsAfter = instructionCount(ir);
+    opts.stats->regsAfter = registerCount(ir);
+  }
   return ir;
 }

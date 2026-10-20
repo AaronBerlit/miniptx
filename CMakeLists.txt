@@ -29,6 +29,7 @@ add_library(miniptx_core
   src/interp.cpp
   src/driver.cpp
   src/opt.cpp
+  src/regalloc.cpp
 )
 target_include_directories(miniptx_core PUBLIC src)
 
@@ -47,6 +48,7 @@ add_executable(unit_tests
   tests/test_ptxreader.cpp
   tests/test_e2e.cpp
   tests/test_opt.cpp
+  tests/test_regalloc.cpp
 )
 # The e2e test scans these folders for .tiny files with // RUN: lines.
 target_compile_definitions(unit_tests PRIVATE
