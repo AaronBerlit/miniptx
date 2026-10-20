@@ -8,21 +8,24 @@
 
 #include "diagnostics.h"
 #include "lexer.h"
+#include "irgen.h"
 #include "parser.h"
 #include "sema.h"
 
 static void usage() {
-  std::cerr << "usage: miniptx [--dump-tokens] [--dump-ast] <file.tiny>\n";
+  std::cerr << "usage: miniptx [--dump-tokens] [--dump-ast] [--dump-ir] <file.tiny>\n";
 }
 
 int main(int argc, char** argv) {
   bool dumpTokens = false;
   bool dumpAst = false;
+  bool dumpIr = false;
   std::string path;
   for (int i = 1; i < argc; i++) {
     std::string arg = argv[i];
     if (arg == "--dump-tokens") dumpTokens = true;
     else if (arg == "--dump-ast") dumpAst = true;
+    else if (arg == "--dump-ir") dumpIr = true;
     else if (!arg.empty() && arg[0] == '-') { usage(); return 2; }
     else path = arg;
   }
@@ -48,6 +51,8 @@ int main(int argc, char** argv) {
     Program program = parseProgram(tokens);
     if (dumpAst) printProgram(program, std::cout);
     analyze(program);
+    IrModule ir = generateIr(program);
+    if (dumpIr) printIrModule(ir, std::cout);
   } catch (const CompileError& e) {
     std::cerr << path << ":" << e.line << ":" << e.col << ": error: " << e.what() << "\n";
     return 1;

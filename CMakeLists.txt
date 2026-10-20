@@ -22,6 +22,8 @@ add_library(miniptx_core
   src/ast.cpp
   src/parser.cpp
   src/sema.cpp
+  src/ir.cpp
+  src/irgen.cpp
 )
 target_include_directories(miniptx_core PUBLIC src)
 
@@ -36,6 +38,7 @@ add_executable(unit_tests
   tests/test_lexer.cpp
   tests/test_parser.cpp
   tests/test_sema.cpp
+  tests/test_irgen.cpp
 )
 target_link_libraries(unit_tests PRIVATE miniptx_core)
 add_test(NAME unit_tests COMMAND unit_tests)
