@@ -3,6 +3,7 @@
 #include <cstdio>
 
 #include "irgen.h"
+#include "opt.h"
 #include "lexer.h"
 #include "parser.h"
 #include "sema.h"
@@ -24,5 +25,9 @@ IrModule compileSource(const std::string& source, const CompileOptions& opts) {
 
   IrModule ir = generateIr(program);
   if (opts.dumpIr) printIrModule(ir, *opts.dumpIr);
+
+  if (opts.stats) opts.stats->instrsBefore = instructionCount(ir);
+  if (opts.optimize) optimize(ir);
+  if (opts.stats) opts.stats->instrsAfter = instructionCount(ir);
   return ir;
 }

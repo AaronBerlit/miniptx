@@ -1,0 +1,12 @@
+// Celsius -> Fahrenheit, one element per thread.
+// "9.0 / 5.0" is written that way for readability. Constant folding turns it
+// into 1.8 at compile time, so no thread ever executes that division.
+// RUN: --threads 4 to_fahrenheit [0,100,-40,37] [0,0,0,0] 4
+// EXPECT: c = [0, 100, -40, 37]
+// EXPECT: f = [32, 212, -40, 98.6]
+func to_fahrenheit(float c[], float f[], int n) {
+    int i = tid;
+    if (i < n) {
+        f[i] = c[i] * (9.0 / 5.0) + 32.0;
+    }
+}

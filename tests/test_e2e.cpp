@@ -85,10 +85,22 @@ void runE2eFile(const fs::path& path) {
   }
 
   // Compile -> PTX text -> read back. Running the re-read module checks the
-  // emitter and reader as well as the code generator.
-  IrModule module = readPtx(emitPtx(compileSource(source)));
+  // emitter and reader as well as the code generator. Every RUN is checked
+  // with AND without optimization: an optimization must never change results.
+  CompileOptions noOpt;
+  noOpt.optimize = false;
+  struct Variant {
+    const char* label;
+    IrModule module;
+  };
+  std::vector<Variant> variants = {
+      {"optimized", readPtx(emitPtx(compileSource(source)))},
+      {"unoptimized", readPtx(emitPtx(compileSource(source, noOpt)))},
+  };
 
+  for (const Variant& v : variants)
   for (const RunCase& c : cases) {
+    const IrModule& module = v.module;
     std::vector<std::string> w = c.words;
     int threads = 1;
     if (w.size() >= 2 && w[0] == "--threads") {
@@ -108,7 +120,7 @@ void runE2eFile(const fs::path& path) {
     if (got != c.expected) {
       std::string runLine;
       for (const std::string& s : c.words) runLine += s + " ";
-      fail("RUN: " + runLine + "\n  --- expected ---\n" + c.expected + "  --- got ---\n" + got);
+      fail(std::string("[") + v.label + "] RUN: " + runLine + "\n  --- expected ---\n" + c.expected + "  --- got ---\n" + got);
     }
   }
 }

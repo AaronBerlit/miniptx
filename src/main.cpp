@@ -21,7 +21,9 @@ static void usage() {
   std::cerr <<
       "usage: miniptx [options] <file.tiny | file.ptx> [--run <func> [args...]]\n"
       "options:\n"
-      "  --dump-tokens, --dump-ast, --dump-ir   print an intermediate stage\n"
+      "  --dump-tokens, --dump-ast, --dump-ir   print an intermediate stage (IR is pre-optimization)\n"
+      "  --no-opt                               turn off optimizations\n"
+      "  --stats                                print instruction counts before/after optimization\n"
       "  -o <file>                              write the PTX-like output to <file>\n"
       "  --threads <N>                          with --run: launch N threads (tid = 0..N-1)\n"
       "  --run <func> [args...]                 run <func>; args look like 5, 2.5, [1,2,3]\n";
@@ -37,12 +39,16 @@ int main(int argc, char** argv) {
   std::vector<std::string> runArgs;
   bool run = false;
   int threads = 1;
+  CompileOptions::Stats stats;
+  bool showStats = false;
 
   for (int i = 1; i < argc; i++) {
     std::string arg = argv[i];
     if (arg == "--dump-tokens") opts.dumpTokens = &std::cout;
     else if (arg == "--dump-ast") opts.dumpAst = &std::cout;
     else if (arg == "--dump-ir") opts.dumpIr = &std::cout;
+    else if (arg == "--no-opt") opts.optimize = false;
+    else if (arg == "--stats") { showStats = true; opts.stats = &stats; }
     else if (arg == "-o" && i + 1 < argc) outPath = argv[++i];
     else if (arg == "--threads" && i + 1 < argc) {
       threads = std::atoi(argv[++i]);
@@ -72,6 +78,13 @@ int main(int argc, char** argv) {
       ptx = buf.str();  // already compiled: skip straight to running it
     } else {
       ptx = emitPtx(compileSource(buf.str(), opts));
+      if (showStats) {
+        std::cerr << "instructions: " << stats.instrsBefore << " -> " << stats.instrsAfter;
+        if (stats.instrsBefore > 0)
+          std::cerr << " (" << 100 * (stats.instrsBefore - stats.instrsAfter) / stats.instrsBefore
+                    << "% fewer)";
+        std::cerr << "\n";
+      }
     }
 
     if (!outPath.empty()) {
@@ -85,7 +98,7 @@ int main(int argc, char** argv) {
       // emitted file contains everything needed to execute the program.
       IrModule module = readPtx(ptx);
       std::cout << runFromStrings(module, runFn, runArgs, threads);
-    } else if (outPath.empty() && !opts.dumpTokens && !opts.dumpAst && !opts.dumpIr) {
+    } else if (outPath.empty() && !opts.dumpTokens && !opts.dumpAst && !opts.dumpIr && !showStats) {
       std::cout << ptx;  // no other output requested: print the result
     }
   } catch (const CompileError& e) {

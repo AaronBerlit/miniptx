@@ -23,10 +23,14 @@ static std::string readError(const std::string& text) {
 
 // The key property: emit -> read -> print gives back exactly the same text.
 TEST(ptxreader_round_trip_is_exact) {
+  // Unoptimized, so numRegs exactly matches the registers that appear in the text.
+  CompileOptions noOpt;
+  noOpt.optimize = false;
   IrModule m = compileSource(
       "func g(float v[], int k) -> float { return v[k] * 2.5; }\n"
       "func h(float w[], int n) { int i = tid; while (i < n) { w[i] = -g(w, i); i = i + 1; } "
-      "if (n == 0) { return; } else { g(w, 0); } }");
+      "if (n == 0) { return; } else { g(w, 0); } }",
+      noOpt);
   IrModule back = readPtx(emitPtx(m));
   CHECK_EQ(print(back), print(m));
   CHECK_EQ(back.functions[1].numRegs[0], m.functions[1].numRegs[0]);
