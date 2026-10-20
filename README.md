@@ -1,5 +1,7 @@
 # MiniPTX
 
+[![CI](https://github.com/AaronBerlit/miniptx/actions/workflows/ci.yml/badge.svg)](https://github.com/AaronBerlit/miniptx/actions/workflows/ci.yml)
+
 A small optimizing compiler, written in C++17, for a tiny C-like language. It
 targets a **PTX-like virtual instruction set** and includes an interpreter that
 runs the output.
@@ -10,6 +12,8 @@ portable GPU instruction set. CUDA compiles to PTX, and the driver's assembler
 builds the half of that story that comes first: a full compiler pipeline whose
 output has the same shape as PTX. That means typed instructions, unlimited
 virtual registers, predicates, and guarded branches.
+
+![Demo: compiling a SAXPY kernel to PTX-like code and running it](docs/demo.gif)
 
 ```
 func vec_add(float a[], float b[], float c[], int n) {      .func vec_add(.f32 a[], .f32 b[], .f32 c[], .s32 %r1)
