@@ -87,7 +87,7 @@ std::string instrToString(const Instr& in) {
     case Op::Bra: {
       std::string g;
       if (in.guard.isReg()) g = std::string("@") + (in.guardNegated ? "!" : "") + operandToString(in.guard) + " ";
-      return g + padOp("bra") + in.label + ";";
+      return padOp(g + "bra") + in.label + ";";
     }
     case Op::Call: {
       // PTX shape: call (ret), name, (arg1, arg2);

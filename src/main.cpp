@@ -27,6 +27,7 @@ int main(int argc, char** argv) {
     else if (arg == "--dump-ast") dumpAst = true;
     else if (arg == "--dump-ir") dumpIr = true;
     else if (!arg.empty() && arg[0] == '-') { usage(); return 2; }
+    else if (!path.empty()) { usage(); return 2; }  // only one input file
     else path = arg;
   }
   if (path.empty()) { usage(); return 2; }

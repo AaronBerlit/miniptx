@@ -40,6 +40,7 @@ class FunctionGen {
   // Every scalar variable (by varId) lives in ONE register for its whole life.
   // Assigning to the variable overwrites that register.
   std::vector<Operand> varReg_;
+  int labelCount_ = 0;  // makes label names unique within the function
 
   Operand newReg(RegClass c) {
     int& count = out_.numRegs[static_cast<int>(c)];
@@ -49,10 +50,6 @@ class FunctionGen {
   void emit(Instr in) { out_.body.push_back(std::move(in)); }
 
   static Instr ret() { Instr in; in.op = Op::Ret; return in; }
-
-  [[noreturn]] static void notYet(const char* what, int line, int col) {
-    throw CompileError(std::string(what) + " is not implemented yet (step 4b)", line, col);
-  }
 
   // ---- Statements -----------------------------------------------------------
 
@@ -92,10 +89,97 @@ class FunctionGen {
       case Stmt::Kind::Block:
         genBlock(s);
         break;
-      case Stmt::Kind::If: notYet("if", s.line, s.col);
-      case Stmt::Kind::While: notYet("while", s.line, s.col);
-      case Stmt::Kind::ExprStmt: notYet("call", s.line, s.col);
+      case Stmt::Kind::If: {
+        int n = ++labelCount_;
+        std::string endLabel = "L_endif" + std::to_string(n);
+        if (!s.elseBody) {
+          //     setp / @!p bra L_endif     <- skip the body when cond is false
+          //     ...then...
+          // L_endif:
+          genBranchIfFalse(*s.cond, endLabel);
+          genStmt(*s.body);
+        } else {
+          //     setp / @!p bra L_else
+          //     ...then...
+          //     bra L_endif                 <- don't fall into the else part
+          // L_else:
+          //     ...else...
+          // L_endif:
+          std::string elseLabel = "L_else" + std::to_string(n);
+          genBranchIfFalse(*s.cond, elseLabel);
+          genStmt(*s.body);
+          emitBra(endLabel);
+          emitLabel(elseLabel);
+          genStmt(*s.elseBody);
+        }
+        emitLabel(endLabel);
+        break;
+      }
+      case Stmt::Kind::While: {
+        // L_while:
+        //     setp / @!p bra L_endwhile    <- test at the top; leave when false
+        //     ...body...
+        //     bra L_while                  <- loop back and test again
+        // L_endwhile:
+        int n = ++labelCount_;
+        std::string top = "L_while" + std::to_string(n);
+        std::string end = "L_endwhile" + std::to_string(n);
+        emitLabel(top);
+        genBranchIfFalse(*s.cond, end);
+        genStmt(*s.body);
+        emitBra(top);
+        emitLabel(end);
+        break;
+      }
+      case Stmt::Kind::ExprStmt:
+        genExpr(*s.value);  // a call whose result (if any) is ignored
+        break;
     }
+  }
+
+  // A condition is always a comparison (sema guarantees it). It becomes:
+  //   setp.<cmp>.<type> %pN, a, b;    // %pN = (a <cmp> b)
+  //   @!%pN bra label;                // jump away when the condition is FALSE
+  // Jumping on *false* lets the "true" code follow straight after, in source order.
+  void genBranchIfFalse(const Expr& cond, const std::string& label) {
+    Operand a = genExpr(*cond.lhs);
+    Operand b = genExpr(*cond.rhs);
+    Instr setp;
+    setp.op = Op::Setp;
+    setp.type = irTypeOf(cond.lhs->type);
+    setp.dst = newReg(RegClass::Pred);
+    setp.srcs = {a, b};
+    switch (cond.op) {
+      case TokenKind::Lt: setp.cmp = Cmp::Lt; break;
+      case TokenKind::Gt: setp.cmp = Cmp::Gt; break;
+      case TokenKind::Le: setp.cmp = Cmp::Le; break;
+      case TokenKind::Ge: setp.cmp = Cmp::Ge; break;
+      case TokenKind::Eq: setp.cmp = Cmp::Eq; break;
+      case TokenKind::Ne: setp.cmp = Cmp::Ne; break;
+      default: throw CompileError("internal error: condition is not a comparison", cond.line, cond.col);
+    }
+    emit(setp);
+
+    Instr bra;
+    bra.op = Op::Bra;
+    bra.label = label;
+    bra.guard = setp.dst;
+    bra.guardNegated = true;
+    emit(bra);
+  }
+
+  void emitBra(const std::string& label) {
+    Instr bra;
+    bra.op = Op::Bra;
+    bra.label = label;
+    emit(bra);
+  }
+
+  void emitLabel(const std::string& label) {
+    Instr l;
+    l.op = Op::Label;
+    l.label = label;
+    emit(l);
   }
 
   // ---- Expressions ----------------------------------------------------------
@@ -163,13 +247,29 @@ class FunctionGen {
           case TokenKind::Minus: in.op = Op::Sub; break;
           case TokenKind::Star: in.op = Op::Mul; break;
           case TokenKind::Slash: in.op = Op::Div; break;
-          default: notYet("comparison", e.line, e.col);  // handled with if/while in 4b
+          default:  // comparisons only appear as conditions (see genBranchIfFalse)
+            throw CompileError("internal error: comparison used as a value", e.line, e.col);
         }
         emit(in);
         return dst;
       }
 
-      case Expr::Kind::Call: notYet("call", e.line, e.col);
+      case Expr::Kind::Call: {
+        // call (%r5), factorial, (%r1);
+        Instr call;
+        call.op = Op::Call;
+        call.label = e.name;
+        call.type = ty;
+        for (const ExprPtr& arg : e.args) {
+          bool isArray = arg->kind == Expr::Kind::Var && fn_.vars[arg->varId].isArray;
+          // Arrays are passed by name: the callee reads and writes the same memory.
+          call.srcs.push_back(isArray ? Operand::makeArray(fn_.vars[arg->varId].name)
+                                      : genExpr(*arg));
+        }
+        if (e.type != BaseType::Void) call.dst = dstReg();
+        emit(call);
+        return call.dst;
+      }
     }
     return Operand();
   }

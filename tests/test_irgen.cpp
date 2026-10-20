@@ -70,3 +70,73 @@ TEST(irgen_shadowed_variables_get_separate_registers) {
                        "    ret;\n"
                        "}\n"));
 }
+
+// ---- Control flow and calls (step 4b) ----------------------------------------
+
+TEST(irgen_while_loop_matches_prd_shape) {
+  CHECK_EQ(ir("func f(int n) { int i = 0; while (i < n) { i = i + 1; } }"),
+           std::string(".func f(.s32 %r1)\n"
+                       "{\n"
+                       "    mov.s32     %r2, 0;\n"
+                       "L_while1:\n"
+                       "    setp.lt.s32 %p1, %r2, %r1;\n"
+                       "    @!%p1 bra   L_endwhile1;\n"
+                       "    add.s32     %r2, %r2, 1;\n"
+                       "    bra         L_while1;\n"
+                       "L_endwhile1:\n"
+                       "    ret;\n"
+                       "}\n"));
+}
+
+TEST(irgen_if_without_else_jumps_to_end) {
+  CHECK_EQ(ir("func f(float x) -> float { if (x < 0.0) { x = -x; } return x; }"),
+           std::string(".func f(.f32 %f1) -> .f32\n"
+                       "{\n"
+                       "    setp.lt.f32 %p1, %f1, 0.0;\n"
+                       "    @!%p1 bra   L_endif1;\n"
+                       "    neg.f32     %f1, %f1;\n"
+                       "L_endif1:\n"
+                       "    ret         %f1;\n"
+                       "}\n"));
+}
+
+TEST(irgen_if_else_skips_over_else_part) {
+  CHECK_EQ(ir("func f(int x) -> int { int y = 0; if (x != 0) { y = 1; } else { y = 2; } return y; }"),
+           std::string(".func f(.s32 %r1) -> .s32\n"
+                       "{\n"
+                       "    mov.s32     %r2, 0;\n"
+                       "    setp.ne.s32 %p1, %r1, 0;\n"
+                       "    @!%p1 bra   L_else1;\n"
+                       "    mov.s32     %r2, 1;\n"
+                       "    bra         L_endif1;\n"
+                       "L_else1:\n"
+                       "    mov.s32     %r2, 2;\n"
+                       "L_endif1:\n"
+                       "    ret         %r2;\n"
+                       "}\n"));
+}
+
+TEST(irgen_nested_loops_get_unique_labels) {
+  std::string out = ir("func f(int n) { int i = 0; while (i < n) { int j = 0; "
+                       "while (j < n) { j = j + 1; } i = i + 1; } }");
+  CHECK(out.find("L_while1:") != std::string::npos);
+  CHECK(out.find("L_while2:") != std::string::npos);
+  CHECK(out.find("bra         L_while1;") != std::string::npos);
+  CHECK(out.find("bra         L_while2;") != std::string::npos);
+}
+
+TEST(irgen_calls_pass_arrays_by_name) {
+  CHECK_EQ(ir("func g(float v[], int k) -> int { return k; }\n"
+              "func h(float w[]) { int r = g(w, 2); g(w, r); }"),
+           std::string(".func g(.f32 v[], .s32 %r1) -> .s32\n"
+                       "{\n"
+                       "    ret         %r1;\n"
+                       "}\n"
+                       "\n"
+                       ".func h(.f32 w[])\n"
+                       "{\n"
+                       "    call        (%r1), g, (w, 2);\n"
+                       "    call        (%r2), g, (w, %r1);\n"
+                       "    ret;\n"
+                       "}\n"));
+}
