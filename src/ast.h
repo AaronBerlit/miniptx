@@ -11,7 +11,9 @@
 
 #include "lexer.h"
 
-enum class BaseType { Int, Float, Void };
+// Bool is the type of a comparison. It can only be used as an if/while
+// condition, which maps directly onto PTX: setp writes a predicate, bra reads it.
+enum class BaseType { Int, Float, Void, Bool };
 const char* typeName(BaseType t);
 
 struct Expr;
@@ -40,8 +42,9 @@ struct Expr {
   ExprPtr lhs, rhs;
   std::vector<ExprPtr> args;
 
-  // Filled in by semantic analysis (step 3); the parser leaves it as Void.
+  // Filled in by semantic analysis (step 3); the parser leaves these empty.
   BaseType type = BaseType::Void;
+  int varId = -1;  // Var, Index: which declaration this name refers to
 };
 
 struct Stmt {
@@ -65,6 +68,8 @@ struct Stmt {
   StmtPtr body;   // If "then" block, While body
   StmtPtr elseBody;
   std::vector<StmtPtr> stmts;  // Block
+
+  int varId = -1;  // VarDecl, Assign: filled in by semantic analysis
 };
 
 struct Param {
@@ -72,6 +77,16 @@ struct Param {
   std::string name;
   bool isArray;
   int line, col;
+  int varId = -1;  // filled in by semantic analysis
+};
+
+// One entry per declared variable (parameter or local) in a function.
+// Semantic analysis builds this table; varId is the index into it.
+struct VarInfo {
+  std::string name;
+  BaseType type;
+  bool isArray;
+  bool isParam;
 };
 
 struct Function {
@@ -80,6 +95,7 @@ struct Function {
   BaseType returnType = BaseType::Void;
   StmtPtr body;  // always a Block
   int line = 0, col = 0;
+  std::vector<VarInfo> vars;  // filled in by semantic analysis
 };
 
 struct Program {

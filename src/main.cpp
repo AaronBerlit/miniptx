@@ -9,6 +9,7 @@
 #include "diagnostics.h"
 #include "lexer.h"
 #include "parser.h"
+#include "sema.h"
 
 static void usage() {
   std::cerr << "usage: miniptx [--dump-tokens] [--dump-ast] <file.tiny>\n";
@@ -46,6 +47,7 @@ int main(int argc, char** argv) {
     }
     Program program = parseProgram(tokens);
     if (dumpAst) printProgram(program, std::cout);
+    analyze(program);
   } catch (const CompileError& e) {
     std::cerr << path << ":" << e.line << ":" << e.col << ": error: " << e.what() << "\n";
     return 1;

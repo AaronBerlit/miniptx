@@ -8,6 +8,7 @@ const char* typeName(BaseType t) {
     case BaseType::Int: return "int";
     case BaseType::Float: return "float";
     case BaseType::Void: return "void";
+    case BaseType::Bool: return "bool";
   }
   return "?";
 }
