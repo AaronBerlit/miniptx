@@ -1,0 +1,10 @@
+// Returns -1, 0, or 1 depending on the sign of x
+func sign(int x) -> int {
+    if (x < 0) {
+        return -1;
+    } else if (x == 0) {
+        return 0;
+    } else {
+        return 1;
+    }
+}
