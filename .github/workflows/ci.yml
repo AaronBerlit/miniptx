@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-and-test:
+    name: ${{ matrix.os }} / ${{ matrix.cxx }}${{ matrix.asan && ' / ASan' || '' }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-latest, cxx: g++ }
+          - { os: ubuntu-latest, cxx: clang++ }
+          - { os: ubuntu-latest, cxx: g++, asan: true }
+          - { os: macos-latest, cxx: clang++ }
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure
+        run: >
+          cmake -S . -B build
+          -DCMAKE_CXX_COMPILER=${{ matrix.cxx }}
+          -DMINIPTX_WERROR=ON
+          -DMINIPTX_ASAN=${{ matrix.asan && 'ON' || 'OFF' }}
+
+      - name: Build
+        run: cmake --build build -j 4
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Run an example end to end
+        run: ./build/miniptx examples/saxpy.tiny --threads 5 --run saxpy 2.0 '[1,2,3,4]' '[10,10,10,10]' 4

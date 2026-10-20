@@ -8,6 +8,12 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # Treat every warning as something to fix (PRD: no warnings with -Wall -Wextra).
 add_compile_options(-Wall -Wextra -Wpedantic)
 
+# CI turns warnings into errors so a warning can never slip in unnoticed.
+option(MINIPTX_WERROR "Treat warnings as errors" OFF)
+if(MINIPTX_WERROR)
+  add_compile_options(-Werror)
+endif()
+
 # Optional AddressSanitizer build: cmake -DMINIPTX_ASAN=ON ..
 option(MINIPTX_ASAN "Build with AddressSanitizer" OFF)
 if(MINIPTX_ASAN)
