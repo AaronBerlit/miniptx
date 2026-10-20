@@ -1,0 +1,6 @@
+// Ints are 32-bit, so overflow wraps around like on real hardware.
+// RUN: double_it 2147483647
+// EXPECT: return = -2
+func double_it(int x) -> int {
+    return x * 2;
+}

@@ -1,0 +1,5 @@
+// ERROR: expected ';' after variable declaration, found 'return'
+func f() -> int {
+    int x = 1
+    return x;
+}

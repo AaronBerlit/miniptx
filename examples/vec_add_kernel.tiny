@@ -1,0 +1,12 @@
+// GPU-style vector add: no loop. Each thread handles ONE element, chosen by
+// its thread id. Launch it with as many threads as there are elements.
+// RUN: --threads 4 vec_add_kernel [1.5,2,3,4] [0.5,1,1,1] [0,0,0,0] 4
+// EXPECT: a = [1.5, 2, 3, 4]
+// EXPECT: b = [0.5, 1, 1, 1]
+// EXPECT: c = [2, 3, 4, 5]
+func vec_add_kernel(float a[], float b[], float c[], int n) {
+    int i = tid;
+    if (i < n) {
+        c[i] = a[i] + b[i];
+    }
+}

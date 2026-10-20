@@ -1,0 +1,12 @@
+// SAXPY: y = alpha * x + y, the classic first CUDA kernel.
+// We launch 5 threads for 4 elements: the "if (i < n)" guard stops thread 4
+// from writing past the end, exactly like real GPU code must.
+// RUN: --threads 5 saxpy 2.0 [1,2,3,4] [10,10,10,10] 4
+// EXPECT: x = [1, 2, 3, 4]
+// EXPECT: y = [12, 14, 16, 18]
+func saxpy(float alpha, float x[], float y[], int n) {
+    int i = tid;
+    if (i < n) {
+        y[i] = alpha * x[i] + y[i];
+    }
+}

@@ -1,0 +1,15 @@
+// Greatest common divisor, Euclid's subtraction method
+// RUN: gcd 48 18
+// EXPECT: return = 6
+// RUN: gcd 17 5
+// EXPECT: return = 1
+func gcd(int a, int b) -> int {
+    while (a != b) {
+        if (a > b) {
+            a = a - b;
+        } else {
+            b = b - a;
+        }
+    }
+    return a;
+}

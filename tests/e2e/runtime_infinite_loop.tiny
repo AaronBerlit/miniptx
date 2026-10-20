@@ -1,0 +1,8 @@
+// RUN: spin
+// EXPECT: runtime error: step limit exceeded (10000000 instructions): infinite loop?
+func spin() {
+    int i = 0;
+    while (i < 1) {
+        i = i + 0;
+    }
+}

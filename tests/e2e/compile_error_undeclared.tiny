@@ -1,0 +1,4 @@
+// ERROR: use of undeclared variable 'x'
+func f() -> int {
+    return x;
+}

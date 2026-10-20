@@ -1,0 +1,11 @@
+// Recursive Fibonacci: exercises call/ret and a deep call tree
+// RUN: fib 1
+// EXPECT: return = 1
+// RUN: fib 15
+// EXPECT: return = 610
+func fib(int n) -> int {
+    if (n < 2) {
+        return n;
+    }
+    return fib(n - 1) + fib(n - 2);
+}

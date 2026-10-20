@@ -11,7 +11,7 @@
 #include <vector>
 
 struct TestCase {
-  const char* name;
+  std::string name;
   std::function<void()> fn;
 };
 

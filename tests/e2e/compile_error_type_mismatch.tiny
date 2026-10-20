@@ -1,0 +1,5 @@
+// ERROR: type mismatch: float / int
+func avg(float a[], int n) -> float {
+    float sum = 0.0;
+    return sum / n;
+}

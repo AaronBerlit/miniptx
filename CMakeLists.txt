@@ -24,6 +24,10 @@ add_library(miniptx_core
   src/sema.cpp
   src/ir.cpp
   src/irgen.cpp
+  src/emit.cpp
+  src/ptxreader.cpp
+  src/interp.cpp
+  src/driver.cpp
 )
 target_include_directories(miniptx_core PUBLIC src)
 
@@ -39,6 +43,12 @@ add_executable(unit_tests
   tests/test_parser.cpp
   tests/test_sema.cpp
   tests/test_irgen.cpp
+  tests/test_ptxreader.cpp
+  tests/test_e2e.cpp
 )
+# The e2e test scans these folders for .tiny files with // RUN: lines.
+target_compile_definitions(unit_tests PRIVATE
+  MINIPTX_EXAMPLES_DIR="${CMAKE_SOURCE_DIR}/examples"
+  MINIPTX_E2E_DIR="${CMAKE_SOURCE_DIR}/tests/e2e")
 target_link_libraries(unit_tests PRIVATE miniptx_core)
 add_test(NAME unit_tests COMMAND unit_tests)

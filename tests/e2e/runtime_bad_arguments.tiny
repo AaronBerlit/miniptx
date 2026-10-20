@@ -1,0 +1,9 @@
+// RUN: f 1 2
+// EXPECT: runtime error: 'f' expects 1 argument(s), got 2
+// RUN: f 2.5
+// EXPECT: runtime error: argument 1 should be an int, got '2.5'
+// RUN: nope
+// EXPECT: runtime error: no function named 'nope'
+func f(int x) -> int {
+    return x;
+}

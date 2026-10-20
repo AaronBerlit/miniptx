@@ -1,0 +1,9 @@
+// RUN: div 10 3
+// EXPECT: return = 3
+// RUN: div -7 2
+// EXPECT: return = -3
+// RUN: div 10 0
+// EXPECT: runtime error: integer division by zero
+func div(int a, int b) -> int {
+    return a / b;
+}

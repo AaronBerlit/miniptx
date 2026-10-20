@@ -1,4 +1,10 @@
 // Iterative factorial
+// RUN: factorial 5
+// EXPECT: return = 120
+// RUN: factorial 0
+// EXPECT: return = 1
+// RUN: factorial 12
+// EXPECT: return = 479001600
 func factorial(int n) -> int {
     int result = 1;
     while (n > 1) {

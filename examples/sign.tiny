@@ -1,4 +1,10 @@
 // Returns -1, 0, or 1 depending on the sign of x
+// RUN: sign -7
+// EXPECT: return = -1
+// RUN: sign 0
+// EXPECT: return = 0
+// RUN: sign 42
+// EXPECT: return = 1
 func sign(int x) -> int {
     if (x < 0) {
         return -1;

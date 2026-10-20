@@ -1,0 +1,10 @@
+// RUN: down 5
+// EXPECT: return = 0
+// RUN: down 100000
+// EXPECT: runtime error: call stack overflow in 'down' (runaway recursion?)
+func down(int n) -> int {
+    if (n == 0) {
+        return 0;
+    }
+    return down(n - 1);
+}

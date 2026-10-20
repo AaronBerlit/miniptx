@@ -1,0 +1,19 @@
+// Iterative Fibonacci: fib(0)=0, fib(1)=1, fib(n)=fib(n-1)+fib(n-2)
+// RUN: fib 0
+// EXPECT: return = 0
+// RUN: fib 10
+// EXPECT: return = 55
+// RUN: fib 30
+// EXPECT: return = 832040
+func fib(int n) -> int {
+    int a = 0;
+    int b = 1;
+    int i = 0;
+    while (i < n) {
+        int next = a + b;
+        a = b;
+        b = next;
+        i = i + 1;
+    }
+    return a;
+}

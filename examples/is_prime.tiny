@@ -1,0 +1,21 @@
+// Trial-division primality test. Returns 1 if n is prime, else 0.
+// RUN: is_prime 97
+// EXPECT: return = 1
+// RUN: is_prime 91
+// EXPECT: return = 0
+// RUN: is_prime 1
+// EXPECT: return = 0
+func is_prime(int n) -> int {
+    if (n < 2) {
+        return 0;
+    }
+    int d = 2;
+    while (d * d <= n) {
+        // "n % d == 0", written without a modulo operator
+        if (n - (n / d) * d == 0) {
+            return 0;
+        }
+        d = d + 1;
+    }
+    return 1;
+}

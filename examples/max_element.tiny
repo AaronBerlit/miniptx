@@ -1,0 +1,15 @@
+// Largest element of an int array
+// RUN: max_element [3,-7,12,0,12,5] 6
+// EXPECT: return = 12
+// EXPECT: a = [3, -7, 12, 0, 12, 5]
+func max_element(int a[], int n) -> int {
+    int best = a[0];
+    int i = 1;
+    while (i < n) {
+        if (a[i] > best) {
+            best = a[i];
+        }
+        i = i + 1;
+    }
+    return best;
+}
